@@ -3,6 +3,7 @@ from swizz.plots._registry import register_plot
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import seaborn as sns
+import pandas as pd
 
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
@@ -29,33 +30,33 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
         {"name": "alpha", "type": "float", "required": False, "description": "Transparency for scatter points. Default: 0.9."},
         {"name": "edgecolor", "type": "str", "required": False, "description": "Edge color for scatter points. Default: 'white'."},
         {"name": "linewidth", "type": "float", "required": False, "description": "Edge line width for scatter points. Default: 0.3."},
+        {"name": "fontsize", "type": "float", "required": False, "description": "Base font size for title, legend texts, and colorbar labels. Default: 12."},
         {"name": "save", "type": "str", "required": False, "description": "Base filename to save PNG and PDF versions if provided."},
     ],
-    example_image="embedding_2d_plot.png",
-    example_code="embedding_2d_plot.py",
 )
 def plot(
-    df,
-    font_family="Times New Roman",
-    title=None,
-    mode="categorical",  # "categorical" or "continuous"
-    hue_column=None,
-    palette=None,
-    cmap_continuous="viridis",
-    display_legend=False,
-    legend_loc="lower right",
-    display_cbar=False,
-    cbar_loc="lower right",
-    show_density=False,
-    density_column=None,
-    density_alpha=0.5,
-    figsize=(8, 8),
-    s=40,
-    alpha=0.9,
-    edgecolor='white',
-    linewidth=0.3,
+    df: pd.DataFrame,
+    font_family: str = "Times New Roman",
+    title: str = None,
+    mode: str = "categorical",
+    hue_column: str = None,
+    palette: list = None,
+    cmap_continuous: str = "viridis",
+    display_legend: bool = False,
+    legend_loc: str = "lower right",
+    display_cbar: bool = False,
+    cbar_loc: str = "lower right",
+    show_density: bool = False,
+    density_column: str = None,
+    density_alpha: float = 0.5,
+    figsize: tuple = (8, 8),
+    s: int = 40,
+    alpha: float = 0.9,
+    edgecolor: str = 'white',
+    linewidth: float = 0.3,
+    fontsize: float = 12,
     ax=None,
-    save=None,
+    save: str = None,
 ):
     """
     General 2D Embedding Plot (for t-SNE, PCA, UMAP, etc.)
@@ -93,7 +94,7 @@ def plot(
         if display_legend:
             legend = ax.legend(
                 loc=legend_loc,
-                fontsize=12,
+                fontsize=fontsize,
                 frameon=True,
                 handlelength=1.1,
                 title=hue_column,
@@ -101,11 +102,11 @@ def plot(
                 borderpad=0.8,
             )
             for handle in legend.legend_handles:
-                handle.set_markersize(8)
+                handle.set_markersize(s / 5)
             for text in legend.get_texts():
                 text.set_fontfamily(font_family)
-                text.set_fontsize(10)
-            legend.get_title().set_fontsize(12)
+                text.set_fontsize(fontsize)
+            legend.get_title().set_fontsize(fontsize + 2)
             legend.get_title().set_fontfamily(font_family)
             legend.get_frame().set_alpha(0.9)
 
@@ -127,14 +128,12 @@ def plot(
         )
 
         if show_density:
-            df = df.sort_values(by=density_column).reset_index(drop=True)
-
-            # Default fallback
+            df = df.sort_values(by=(density_column or hue_column)).reset_index(drop=True)
             if palette is None:
-                num_classes = df[density_column].nunique()
+                num_classes = df[density_column].nunique() if density_column in df else df[hue_column].nunique()
                 palette = sns.color_palette("tab20", n_colors=num_classes)
 
-            for idx, (island, group) in enumerate(df.groupby(density_column)):
+            for idx, (_, group) in enumerate(df.groupby(density_column or hue_column)):
                 sns.kdeplot(
                     ax=ax,
                     x=group['x'],
@@ -157,18 +156,16 @@ def plot(
                                borderpad=0)
 
             cbar = plt.colorbar(sm, cax=axins)
-            cbar.ax.tick_params(labelsize=12)
-            cbar.ax.yaxis.label.set_family(font_family)
+            cbar.ax.tick_params(labelsize=fontsize)
             for label in cbar.ax.get_yticklabels():
                 label.set_family(font_family)
-            cbar.ax.yaxis.set_label_position('left')
-            cbar.ax.yaxis.set_ticks_position('left')
+                label.set_fontsize(fontsize)
 
-            cbar.ax.set_ylabel("")
+            cbar.ax.set_ylabel("", fontsize=fontsize)
             cbar.ax.text(
                 -2.5, 0.5, hue_column,
                 rotation=90,
-                fontsize=14,
+                fontsize=fontsize + 2,
                 fontfamily=font_family,
                 va='center',
                 ha='center',
@@ -186,7 +183,7 @@ def plot(
     ax.set_aspect('equal')
 
     if title:
-        ax.set_title(title, fontsize=16, fontfamily=font_family)
+        ax.set_title(title, fontsize=fontsize + 4, fontfamily=font_family)
 
     plt.tight_layout()
 

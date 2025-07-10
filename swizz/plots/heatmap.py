@@ -14,9 +14,9 @@ import numpy as np
         {"name": "y_labels", "type": "List[str]", "required": False,
          "description": "Labels for rows (overrides DataFrame index)."},
         {"name": "x_category", "type": "str", "required": False,
-            "description": "Category for x-axis labels (overrides DataFrame columns)."},
+         "description": "Category for x-axis labels (overrides DataFrame columns)."},
         {"name": "y_category", "type": "str", "required": False,
-        "description": "Category for y-axis labels (overrides DataFrame index)."},
+         "description": "Category for y-axis labels (overrides DataFrame index)."},
         {"name": "figsize", "type": "tuple", "required": False,
          "description": "Figure size (width, height), e.g., (8, 6)."},
         {"name": "cmap", "type": "str", "required": False,
@@ -37,6 +37,8 @@ import numpy as np
          "description": "Base filename to save PNG and PDF (without extension)."},
         {"name": "cbar_title", "type": "str", "required": False,
          "description": "Title for the colorbar."},
+        {"name": "fontsize", "type": "float", "required": False,
+         "description": "Base font size for axis labels, tick labels, title, cell annotations, and colorbar label."},
         {"name": "ax", "type": "matplotlib.axes.Axes", "required": False,
          "description": "Matplotlib Axes object to plot on. If None, a new figure is created."},
     ],
@@ -58,8 +60,9 @@ def plot(
     cbar=True,
     title=None,
     save=None,
-    ax=None,
     cbar_title="Intensity",
+    fontsize=12,
+    ax=None,
 ):
     # Prepare figure/axis
     if ax is None:
@@ -67,7 +70,7 @@ def plot(
     else:
         fig = ax.figure
 
-    # Ensure DataFrame
+    # Validate data
     if not isinstance(data, pd.DataFrame):
         raise ValueError("`data` must be a pandas DataFrame")
 
@@ -77,12 +80,10 @@ def plot(
     rows = y_labels if y_labels is not None else list(data.index)
 
     # Display image
-    im = ax.imshow(arr, interpolation='nearest',
-                   cmap=cmap, vmin=vmin, vmax=vmax)
+    im = ax.imshow(arr, interpolation='nearest', cmap=cmap, vmin=vmin, vmax=vmax)
     if cbar:
         cbar_obj = fig.colorbar(im, ax=ax)
         if cbar_title:
-            # Place the title vertically on the left side
             cbar_ax = cbar_obj.ax
             cbar_ax.yaxis.set_label_position('right')
             cbar_ax.yaxis.set_ticks_position('right')
@@ -90,8 +91,9 @@ def plot(
                 cbar_title,
                 rotation=90,
                 labelpad=12,
-                fontsize=12
+                fontsize=fontsize
             )
+            cbar_ax.tick_params(labelsize=fontsize)
 
     # Annotate cells if requested
     if annot:
@@ -101,38 +103,39 @@ def plot(
             for j in range(n_cols):
                 val = arr[i, j]
                 color = 'white' if val > thresh else 'black'
-                ax.text(j, i, format(val, fmt),
-                        ha='center', va='center',
-                        color=color, fontweight='bold')
+                ax.text(
+                    j, i, format(val, fmt),
+                    ha='center', va='center',
+                    color=color, fontweight='bold', fontsize=fontsize
+                )
 
-    # Set tick labels
+    # Set ticks and labels
     ax.set_xticks(np.arange(len(cols)))
-    ax.set_xticklabels(cols)
+    ax.set_xticklabels(cols, fontsize=fontsize)
     plt.setp(ax.get_xticklabels(), rotation=0, ha="right")
     ax.set_yticks(np.arange(len(rows)))
-    ax.set_yticklabels(rows)
-    ax.set_xlabel(x_category if x_category else "")
-    ax.set_ylabel(y_category if y_category else "")
+    ax.set_yticklabels(rows, fontsize=fontsize)
 
+    ax.set_xlabel(x_category if x_category else "", fontsize=fontsize)
+    ax.set_ylabel(y_category if y_category else "", fontsize=fontsize)
+
+    # Title
     if title:
-        ax.set_title(title)
+        ax.set_title(title, fontsize=fontsize)
+
     plt.tight_layout()
 
     # Save to files if requested
     if save:
         import os
-        # Determine file paths
-        # If save has an extension, use it directly; otherwise append .png and .pdf
         save_dir = os.path.dirname(save)
         if save_dir and not os.path.exists(save_dir):
             os.makedirs(save_dir, exist_ok=True)
         base, ext = os.path.splitext(save)
         if ext.lower() in ['.png', '.pdf']:
-            # single file provided
             fig.savefig(save, dpi=300, bbox_inches='tight')
         else:
             fig.savefig(f"{save}.png", dpi=300, bbox_inches='tight')
             fig.savefig(f"{save}.pdf", dpi=300, bbox_inches='tight')
-
 
     return fig, ax

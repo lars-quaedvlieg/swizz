@@ -5,50 +5,49 @@ import pandas as pd
 
 @register_plot(
     name="percentile_curve_plot",
-    description="Plot a curve showing scores ranked by percentile, with optional normalization, vertical/horizontal marker lines, and shaded regions for top scores.",
+    description="Plot scores ranked by percentile with optional normalization, reference lines, highlighting, and customizable font sizes.",
     args=[
         {"name": "scores", "type": "Union[pd.Series, pd.DataFrame]", "required": True,
-         "description": "Scores as a pandas Series or DataFrame. If DataFrame, use single-column or specify column."},
+         "description": "Scores as a pandas Series or single-column DataFrame."},
         {"name": "column", "type": "str", "required": False,
-         "description": "Column name to use if `scores` is a DataFrame. Required if DataFrame has multiple columns."},
+         "description": "Column name if `scores` is a multi-column DataFrame."},
         {"name": "normalize_scores", "type": "bool", "required": False,
-         "description": "Whether to normalize scores between 0 and 1. Default: True."},
+         "description": "Normalize scores to [0,1]. Default: True."},
         {"name": "normalize_percentiles", "type": "bool", "required": False,
-         "description": "Whether to normalize x-axis (percentile) between 0 and 1. Default: True."},
-        {"name": "horizontal_markers", "type": "List[Tuple[float, str]]", "required": False,
-         "description": "List of (y_value, label) for horizontal reference lines."},
-        {"name": "vertical_markers", "type": "List[Tuple[float, str]]", "required": False,
-         "description": "List of (x_value, label) for vertical reference lines."},
+         "description": "Normalize percentiles to [0,1]. Default: True."},
+        {"name": "horizontal_markers", "type": "List[Tuple[float,str]]", "required": False,
+         "description": "List of (y_value, label) for horizontal lines."},
+        {"name": "vertical_markers", "type": "List[Tuple[float,str]]", "required": False,
+         "description": "List of (x_value, label) for vertical lines."},
         {"name": "highlight_top_n", "type": "int", "required": False,
-         "description": "Number of top scores to highlight with background shading. Default: None."},
+         "description": "Number of top scores to shade. Default: None."},
         {"name": "highlight_color", "type": "str", "required": False,
-         "description": "Background color for the highlight region. Default: light green."},
+         "description": "Color for highlight region. Default: '#c8e6c9'."},
         {"name": "highlight_label", "type": "str", "required": False,
-         "description": "Optional label to display inside the highlight area. Default: None."},
+         "description": "Text label in highlight. Default: None."},
         {"name": "highlight_label_color", "type": "str", "required": False,
-         "description": "Color for the highlight label text. Default: 'green'."},
+         "description": "Color of highlight label text. Default: 'green'."},
         {"name": "highlight_label_font_size", "type": "int", "required": False,
-         "description": "Font size for the highlight label text. Default: same as font_axis."},
+         "description": "Font size for highlight label text. Default: fontsize."},
         {"name": "vertical_label_offset", "type": "float", "required": False,
-         "description": "Vertical offset above vertical marker in axis coordinates. Default: 0.02."},
+         "description": "Offset above vertical marker. Default: 0.02."},
         {"name": "xlabel", "type": "str", "required": False,
-         "description": "Label for the x-axis. Default: 'Percentile'."},
+         "description": "X-axis label. Default: 'Percentile'."},
         {"name": "ylabel", "type": "str", "required": False,
-         "description": "Label for the y-axis. Default: 'Score'."},
+         "description": "Y-axis label. Default: 'Score'."},
         {"name": "title", "type": "str", "required": False,
-         "description": "Title for the plot. Default: None."},
+         "description": "Plot title. Default: None."},
         {"name": "font_family", "type": "str", "required": False,
-         "description": "Font family for text. Default: 'Times New Roman'."},
-        {"name": "font_axis", "type": "int", "required": False,
-         "description": "Font size for axis labels. Default: 14."},
+         "description": "Font family. Default: 'Times New Roman'."},
+        {"name": "fontsize", "type": "int", "required": False,
+         "description": "Base font size for ticks, labels, title, and marker text. Default: 14."},
         {"name": "figsize", "type": "tuple", "required": False,
-         "description": "Figure size in inches. Default: (8, 5)."},
+         "description": "Figure size. Default: (8, 5)."},
         {"name": "save", "type": "str", "required": False,
-         "description": "Base filename to save PNG and PDF if provided."},
+         "description": "Base filename to save PNG/PDF if provided."},
     ],
-    example_image="percentile_curve_plot.png",
-    example_code="percentile_curve_plot.py",
 )
+
 def plot(
     scores,
     column=None,
@@ -66,97 +65,88 @@ def plot(
     ylabel="Score",
     title=None,
     font_family="Times New Roman",
-    font_axis=14,
+    fontsize=14,
     figsize=(8, 5),
     save=None,
     ax=None,
 ):
-    """
-    Plot scores against percentile with optional normalization and highlighting.
-    Accepts pandas DataFrame or Series as input.
-    """
-
+    # Handle DataFrame input
     if isinstance(scores, pd.DataFrame):
         if column is None:
             if scores.shape[1] != 1:
-                raise ValueError("Please specify the `column` name for multi-column DataFrames.")
+                raise ValueError("Specify `column` for multi-column DataFrames.")
             column = scores.columns[0]
         scores = scores[column]
-
     if not isinstance(scores, pd.Series):
-        raise TypeError("`scores` must be a pandas Series or a DataFrame with a specified column.")
+        raise TypeError("`scores` must be a pandas Series or single-column DataFrame.")
 
+    # Setup axis
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
     else:
         fig = ax.figure
 
-    scores_sorted = scores.sort_values().values
-    percentiles = np.linspace(0, 1, len(scores_sorted))
-
+    # Sort and normalize
+    vals = np.sort(scores.values)
+    pct = np.linspace(0, 1, len(vals))
     if not normalize_percentiles:
-        percentiles = np.arange(len(scores_sorted)) / (len(scores_sorted) - 1)
-
+        pct = np.arange(len(vals)) / (len(vals) - 1)
     if normalize_scores:
-        scores_min = np.min(scores_sorted)
-        scores_max = np.max(scores_sorted)
-        if scores_max != scores_min:
-            scores_sorted = (scores_sorted - scores_min) / (scores_max - scores_min)
-        else:
-            scores_sorted = np.zeros_like(scores_sorted)
+        mn, mx = vals.min(), vals.max()
+        vals = (vals - mn) / (mx - mn) if mx != mn else np.zeros_like(vals)
 
-    # Highlight top N scores
-    if highlight_top_n is not None and highlight_top_n > 0:
-        n_highlight = min(highlight_top_n, len(scores_sorted))
-        highlight_start = 1 - (n_highlight / len(scores_sorted))
-        ax.axvspan(highlight_start, 1, color=highlight_color, alpha=0.5, zorder=0)
-
+    # Highlight top region
+    if highlight_top_n and highlight_top_n > 0:
+        n = min(highlight_top_n, len(vals))
+        start = 1 - n / len(vals)
+        ax.axvspan(start, 1, color=highlight_color, alpha=0.5, zorder=0)
         if highlight_label:
-            if highlight_label_font_size is None:
-                highlight_label_font_size = font_axis
-            ax.text((highlight_start + 1) / 2, 0.02, highlight_label,
-                    fontsize=highlight_label_font_size, fontfamily=font_family,
+            fs_label = highlight_label_font_size or fontsize
+            ax.text((start + 1) / 2, 0.02, highlight_label,
+                    fontsize=fs_label, fontfamily=font_family,
                     color=highlight_label_color, ha='center', va='bottom')
 
-    # Main plot
-    ax.plot(percentiles, scores_sorted, color="black", linewidth=2, label="Scores")
+    # Plot curve
+    ax.plot(pct, vals, color='black', linewidth=2)
 
-    # Horizontal markers
+    # Reference lines
     if horizontal_markers:
-        for y_val, label in horizontal_markers:
-            ax.axhline(y=y_val, color="gray", linestyle="dashed", linewidth=1.5)
-            ax.text(0.01, y_val, label, fontsize=font_axis - 2, fontfamily=font_family,
-                    verticalalignment='bottom', horizontalalignment='left', color="gray")
-
-    # Vertical markers
+        for y, lbl in horizontal_markers:
+            ax.axhline(y=y, color='gray', linestyle='--', linewidth=1.5)
+            ax.text(0.01, y, lbl,
+                    fontsize=fontsize - 2, fontfamily=font_family,
+                    va='bottom', ha='left', color='gray')
     if vertical_markers:
-        for x_val, label in vertical_markers:
-            idx = np.abs(percentiles - x_val).argmin()
-            y_val = scores_sorted[idx]
-            ax.plot([x_val, x_val], [0, y_val], color="gray", linestyle="dashed", linewidth=1.5)
-            ax.text(x_val, y_val + vertical_label_offset, label,
-                    fontsize=font_axis - 2, fontfamily=font_family,
-                    verticalalignment='bottom', horizontalalignment='center', color="gray")
+        for x, lbl in vertical_markers:
+            idx = np.argmin(np.abs(pct - x))
+            y = vals[idx]
+            ax.plot([x, x], [0, y], color='gray', linestyle='--', linewidth=1.5)
+            ax.text(x, y + vertical_label_offset, lbl,
+                    fontsize=fontsize - 2, fontfamily=font_family,
+                    va='bottom', ha='center', color='gray')
 
-    # Axes and labels
-    ax.set_xlabel(xlabel, fontsize=font_axis, fontfamily=font_family)
-    ax.set_ylabel(ylabel, fontsize=font_axis, fontfamily=font_family)
+    # Axis labels and ticks
+    ax.set_xlabel(xlabel, fontsize=fontsize, fontfamily=font_family)
+    ax.set_ylabel(ylabel, fontsize=fontsize, fontfamily=font_family)
+    ax.tick_params(axis='both', labelsize=fontsize)
 
+    # Percentile/score tick formatting
     if normalize_percentiles:
-        ax.set_xticks(np.linspace(0, 1, 6))
-        ax.set_xticklabels([f"{int(x * 100)}%" for x in np.linspace(0, 1, 6)])
-
+        ticks = np.linspace(0, 1, 6)
+        ax.set_xticks(ticks)
+        ax.set_xticklabels([f"{int(t*100)}%" for t in ticks], fontsize=fontsize)
     if normalize_scores:
-        ax.set_yticks(np.linspace(0, 1, 6))
-        ax.set_yticklabels([f"{int(x * 100)}%" for x in np.linspace(0, 1, 6)])
+        ticks = np.linspace(0, 1, 6)
+        ax.set_yticks(ticks)
+        ax.set_yticklabels([f"{int(t*100)}%" for t in ticks], fontsize=fontsize)
 
+    # Title
     if title:
-        ax.set_title(title, fontsize=font_axis + 2, fontfamily=font_family)
+        ax.set_title(title, fontsize=fontsize + 2, fontfamily=font_family)
 
     plt.tight_layout()
-
     if save:
-        plt.savefig(f"{save}.png", dpi=300, bbox_inches="tight")
-        plt.savefig(f"{save}.pdf", dpi=300, bbox_inches="tight")
+        plt.savefig(f"{save}.png", dpi=300, bbox_inches='tight')
+        plt.savefig(f"{save}.pdf", dpi=300, bbox_inches='tight')
 
     return fig, ax

@@ -26,6 +26,8 @@ from matplotlib.patches import Patch
         {"name": "color_map", "type": "Dict[str, str]", "required": False, "description": "Mapping of metrics to colours."},
         {"name": "style_map", "type": "Dict[str, str]", "required": False, "description": "Mapping of metrics to hatch styles."},
         {"name": "put_legend", "type": "bool", "required": False, "description": "Whether to display a legend. Default: True."},
+        {"name": "fontsize", "type": "float", "required": False,
+         "description": "Base font size for axis labels, tick labels, title, legend, and annotations. Default: 12."},
         {"name": "save", "type": "str", "required": False, "description": "Filename base to save PNG and PDF."},
         {"name": "ax", "type": "matplotlib.axes.Axes", "required": False, "description": "Optional matplotlib Axes object."},
     ],
@@ -46,42 +48,44 @@ def plot(
     color_map=None,
     style_map=None,
     put_legend=True,
+    fontsize=12,
     save=None,
     ax=None,
 ):
+    # Validate DataFrame
     if not isinstance(df, pd.DataFrame):
         raise TypeError("`df` must be a pandas DataFrame.")
-
     if category_column not in df.columns:
         raise ValueError(f"`{category_column}` not in DataFrame.")
 
+    # Prepare data
     categories = df[category_column].tolist()
-    if category_group_key:
-        groups = df[category_group_key].tolist()
-    else:
-        groups = None
+    groups = df[category_group_key].tolist() if category_group_key else None
     y_positions = np.arange(len(categories))
-    metric_columns = [col for col in df.columns if col != category_column and (category_group_key is None or col != category_group_key)]
+    metric_columns = [col for col in df.columns if col not in [category_column, category_group_key]]
 
+    # Defaults
     if not color_map:
         color_map = {m: None for m in metric_columns}
     if not style_map:
         style_map = {m: '/' for m in metric_columns}
 
+    # Create figure/axis
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
     else:
         fig = ax.figure
 
+    # Plot each metric
     for i, metric in enumerate(metric_columns):
         values = df[metric].values
         offsets = (i - len(metric_columns) / 2) * bar_height
         bar_pos = y_positions + offsets
         hatch = style_map.get(metric, '/')
 
-        # Determine colour for each bar
+        # Determine colors
         if groups and group_color_map:
-            bar_colors = [group_color_map.get(group, None) for group in groups]
+            bar_colors = [group_color_map.get(g, None) for g in groups]
         else:
             bar_colors = [color_map.get(metric)] * len(categories)
 
@@ -96,6 +100,7 @@ def plot(
             hatch=hatch,
         )
 
+        max_val = values.max() if values.size else 0
         for bar in bars:
             face = mcolors.to_rgba(bar.get_facecolor(), alpha=1.0)
             edge_col = mcolors.to_hex([min(1, c * 0.6) for c in face[:3]])
@@ -103,35 +108,43 @@ def plot(
 
             w = bar.get_width()
             y = bar.get_y() + bar.get_height() / 2
+            # Annotation
             ax.text(
-                w + max(values) * 0.01,
+                w + max_val * 0.01,
                 y,
                 f"{w:.3f}",
                 va="center",
                 ha="left",
                 color=edge_col,
                 fontweight="bold",
-                fontsize=12
+                fontsize=fontsize
             )
-            ax.plot([w, w + max(values) * 0.01], [y, y], lw=1.5, color=edge_col)
+            ax.plot([w, w + max_val * 0.01], [y, y], lw=1.5, color=edge_col)
 
-    # Axes and title
+    # Axis labels and ticks
     ax.set_yticks(y_positions)
-    ax.set_yticklabels(categories)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.set_title(title)
+    ax.set_yticklabels(categories, fontsize=fontsize)
+    ax.set_xlabel(xlabel if xlabel else "", fontsize=fontsize)
+    ax.set_ylabel(ylabel if ylabel else "", fontsize=fontsize)
+    ax.tick_params(axis='x', labelsize=fontsize)
 
-    # Custom legend
+    # Title
+    if title:
+        ax.set_title(title, fontsize=fontsize)
+
+    # Legend
     if put_legend:
         if groups and group_color_map:
-            handles = [Patch(facecolor=col, label=group) for group, col in group_color_map.items()]
-            ax.legend(handles=handles, loc=legend_loc)
+            handles = [Patch(facecolor=col, label=grp) for grp, col in group_color_map.items()]
+            leg = ax.legend(handles=handles, loc=legend_loc, fontsize=fontsize)
         else:
-            ax.legend(loc=legend_loc, ncol=len(metric_columns))
+            leg = ax.legend(loc=legend_loc, ncol=len(metric_columns), fontsize=fontsize)
+        for text in leg.get_texts():
+            text.set_fontsize(fontsize)
 
     plt.tight_layout()
 
+    # Save
     if save:
         import os
         save_path = os.path.abspath(save)
@@ -139,7 +152,8 @@ def plot(
         base, ext = os.path.splitext(save_path)
         if ext.lower() in ['.png', '.pdf']:
             fig.savefig(save_path, dpi=300, bbox_inches='tight')
-            fig.savefig(base + ('.pdf' if ext.lower() == '.png' else '.png'), dpi=300, bbox_inches='tight')
+            other = base + ('.pdf' if ext.lower()=='.png' else '.png')
+            fig.savefig(other, dpi=300, bbox_inches='tight')
         else:
             fig.savefig(f"{save_path}.png", dpi=300, bbox_inches='tight')
             fig.savefig(f"{save_path}.pdf", dpi=300, bbox_inches='tight')

@@ -10,22 +10,22 @@ The Manim renderer provides extensive configuration options for customizing your
 <div style="display: flex; flex-wrap: wrap; gap: 2rem; justify-content: flex-start;">
 <div style="flex: 1 1 300px; max-width: 300px; border: 1px solid #ddd; padding: 1rem; border-radius: 0.5rem;">
   <div style="height: 180px; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 0.5rem;">
-    <a href="collection/histograms_evolution.html">
-      <img src="../_static/images/manim/histograms_evolution.png" alt="histograms_evolution" style="max-height: 100%; max-width: 100%;">
-    </a>
-  </div>
-  <h4 style="margin: 0.5rem 0;"><a href="collection/histograms_evolution.html">histograms_evolution</a></h4>
-  <p style="font-size: 0.9rem;">Visualizes the evolution of histograms</p>
-</div>
-
-<div style="flex: 1 1 300px; max-width: 300px; border: 1px solid #ddd; padding: 1rem; border-radius: 0.5rem;">
-  <div style="height: 180px; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 0.5rem;">
     <a href="collection/code_evolution.html">
       <img src="../_static/images/manim/code_evolution.png" alt="code_evolution" style="max-height: 100%; max-width: 100%;">
     </a>
   </div>
   <h4 style="margin: 0.5rem 0;"><a href="collection/code_evolution.html">code_evolution</a></h4>
   <p style="font-size: 0.9rem;">Visualizes the evolution of code versions with their optimality scores</p>
+</div>
+
+<div style="flex: 1 1 300px; max-width: 300px; border: 1px solid #ddd; padding: 1rem; border-radius: 0.5rem;">
+  <div style="height: 180px; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 0.5rem;">
+    <a href="collection/histograms_evolution.html">
+      <img src="../_static/images/manim/histograms_evolution.png" alt="histograms_evolution" style="max-height: 100%; max-width: 100%;">
+    </a>
+  </div>
+  <h4 style="margin: 0.5rem 0;"><a href="collection/histograms_evolution.html">histograms_evolution</a></h4>
+  <p style="font-size: 0.9rem;">Visualizes the evolution of histograms</p>
 </div>
 
 </div>

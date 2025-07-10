@@ -41,9 +41,9 @@ from swizz.plots._registry import register_plot
          "description": "Figure size. Default: (8, 5)."},
         {"name": "save", "type": "str", "required": False,
          "description": "Base path to save PNG and PDF if provided."},
+        {"name": "fontsize", "type": "float", "required": False,
+         "description": "Base font size for annotations, ticks, labels, title, and legend."},
     ],
-    example_code="dual_histogram_with_errorbars_df_example.py",
-    example_image="dual_histogram_with_errorbars.png",
 )
 def plot(
     data_df: pd.DataFrame,
@@ -60,6 +60,7 @@ def plot(
     title: str = None,
     figsize: tuple = (8, 5),
     save: str = None,
+    fontsize: float = 12,
     ax=None,
 ):
     # Setup figure
@@ -83,12 +84,11 @@ def plot(
 
     # Function to compute mean and stderr per label
     def compute_stats(sub_df):
-        # sub_df grouped by seed
         hist_matrix = np.stack(
             sub_df.groupby(seed_key)[score_key]
                   .apply(lambda arr: np.histogram(arr, bins=bins)[0])
                   .values
-        )  # shape (n_seeds, n_bins)
+        )
         mean_freq = hist_matrix.mean(axis=0)
         stderr = hist_matrix.std(axis=0, ddof=0) / np.sqrt(hist_matrix.shape[0])
         return mean_freq, stderr
@@ -99,27 +99,43 @@ def plot(
     for lbl, color in zip(baseline_labels, baseline_colors):
         sub = data_df[data_df[label_key] == lbl]
         mean_freq, stderr = compute_stats(sub)
-        ax.step(bin_centers, mean_freq, where='mid', color=color,
-                linestyle='dashed', linewidth=2, label=lbl)
-        ax.errorbar(bin_centers, mean_freq, yerr=stderr, fmt='s',
-                    color=color, capsize=3, markersize=4, markerfacecolor='white')
+        ax.step(
+            bin_centers, mean_freq,
+            where='mid', linestyle='dashed', linewidth=2,
+            color=color, label=lbl
+        )
+        ax.errorbar(
+            bin_centers, mean_freq, yerr=stderr, fmt='s', capsize=3,
+            markersize=4, markerfacecolor='white', color=color
+        )
 
     # Plot main model
     sub_main = data_df[data_df[label_key] == main_label]
     mean_main, stderr_main = compute_stats(sub_main)
     bar_width = bins[1] - bins[0]
-    ax.bar(bin_centers, mean_main, width=bar_width,
-           color=main_color, alpha=0.6, edgecolor='black', label=main_label)
-    ax.errorbar(bin_centers, mean_main, yerr=stderr_main, fmt='o',
-                color=main_color, capsize=3, markersize=4, markerfacecolor='white')
+    ax.bar(
+        bin_centers, mean_main, width=bar_width,
+        color=main_color, alpha=0.6, edgecolor='black', label=main_label
+    )
+    ax.errorbar(
+        bin_centers, mean_main, yerr=stderr_main, fmt='o', capsize=3,
+        markersize=4, markerfacecolor='white', color=main_color
+    )
 
     # Labels and styling
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
+    ax.tick_params(axis='both', labelsize=fontsize)
+    ax.xaxis.label.set_size(fontsize)
+    ax.yaxis.label.set_size(fontsize)
     if title:
-        ax.set_title(title)
+        ax.set_title(title, fontsize=fontsize + 2)
     ax.grid(True, linestyle='--', alpha=0.5)
-    ax.legend()
+    legend = ax.legend()
+    legend.set_title(None)
+    for text in legend.get_texts():
+        text.set_fontsize(fontsize)
+
     plt.tight_layout()
 
     # Save

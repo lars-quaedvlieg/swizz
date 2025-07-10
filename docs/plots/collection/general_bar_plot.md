@@ -1,6 +1,6 @@
 # `general_bar_plot`
 
-> General bar plot comparing multiple metrics for each category with consistent colors and hatching.
+> General bar plot comparing multiple metrics for each category with consistent colors, hatching, and customizable font sizes.
 
 ---
 
@@ -18,7 +18,9 @@
 | bar_width | float | ❌ | Width of bars. Default: 0.25. |
 | color_map | Dict[str, str] | ❌ | Map from metric name to color. |
 | style_map | Dict[str, str] | ❌ | Map from metric name to hatch style. |
+| fontsize | float | ❌ | Base font size for axis labels, tick labels, title, legend, and annotations. Default: 12. |
 | save | str | ❌ | Base filename to save PNG and PDF. |
+| ax | matplotlib.axes.Axes | ❌ | Optional matplotlib Axes object. |
 
 ---
 
@@ -26,29 +28,8 @@
 
 ````{dropdown} Click to show example code
 ```python
-import pandas as pd
-from swizz import plot
-import matplotlib.pyplot as plt
-
-df = pd.DataFrame({
-    "Condition": ["No FTz", "FTz"],
-    "Reward": [1.0, 1.2],
-    "Goal": [0.7, 0.9],
-})
-
-fig, ax = plot("general_bar_plot",
-    df=df,
-    category_column="Condition",
-    ylabel="Avg Value",
-    title="Comparison of Reward and Goal",
-    color_map={"Reward": "tab:blue", "Goal": "tab:orange"},
-    style_map={"Reward": "/", "Goal": "\\"},
-    bar_width=0.3,
-    save="general_bar_plot"
-)
-plt.show()
-
+# Example code for |general_bar_plot| not found.
 ```
 ````
 
-<img src="../../_static/images/plots/general_bar_plot.png" alt="general_bar_plot" style="max-width: 100%; width: auto; height: auto; max-height: 450px;">
+<img src="../../_static/images/plots/" alt="general_bar_plot" style="max-width: 100%; width: auto; height: auto; max-height: 450px;">

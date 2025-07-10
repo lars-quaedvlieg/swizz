@@ -26,6 +26,8 @@ from matplotlib import colors as mcolors
          "description": "Whether to display the colorbar."},
         {"name": "save", "type": "str", "required": False,
          "description": "Base filename to save PNG and PDF outputs."},
+        {"name": "fontsize", "type": "float", "required": False,
+         "description": "Base font size for annotations, ticks, and title."},
     ],
     example_code="confusion_matrix.py",
     example_image="confusion_matrix.png",
@@ -40,6 +42,7 @@ def plot(
     fmt='d',
     cbar=True,
     save=None,
+    fontsize=12,
     ax=None,
 ):
     # Create figure and axis if not provided
@@ -74,7 +77,7 @@ def plot(
             color = 'white' if val > thresh else 'black'
             ax.text(j, i, format(val, fmt),
                     ha='center', va='center',
-                    color=color, fontweight='bold')
+                    color=color, fontweight='bold', fontsize=fontsize)
 
     # Axis labels and ticks
     ax.set_xlabel('Predicted label')
@@ -83,10 +86,15 @@ def plot(
     ax.set_yticks(np.arange(len(labels)))
     ax.set_xticklabels(labels)
     ax.set_yticklabels(labels)
-    plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right", fontsize=fontsize)
+    plt.setp(ax.get_yticklabels(), fontsize=fontsize)
 
     # Title and layout
     ax.set_title(title)
+    ax.xaxis.label.set_size(fontsize)
+    ax.yaxis.label.set_size(fontsize)
+    if title:
+        ax.title.set_fontsize(fontsize + 2)
     plt.tight_layout()
 
     # Save if requested

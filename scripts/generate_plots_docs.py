@@ -54,7 +54,7 @@ def generate_docs():
 
         # Load code
         code_contents = ""
-        if os.path.exists(code_path):
+        if os.path.isfile(code_path):
             with open(code_path, "r") as f:
                 code_contents = f.read()
         else:

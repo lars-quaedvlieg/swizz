@@ -22,6 +22,7 @@
 | title | str | ❌ | Plot title. Default: None. |
 | figsize | tuple | ❌ | Figure size. Default: (8, 5). |
 | save | str | ❌ | Base path to save PNG and PDF if provided. |
+| fontsize | float | ❌ | Base font size for annotations, ticks, labels, title, and legend. |
 
 ---
 
@@ -33,4 +34,4 @@
 ```
 ````
 
-<img src="../../_static/images/plots/dual_histogram_with_errorbars.png" alt="dual_histogram_with_errorbars_df" style="max-width: 100%; width: auto; height: auto; max-height: 450px;">
+<img src="../../_static/images/plots/" alt="dual_histogram_with_errorbars_df" style="max-width: 100%; width: auto; height: auto; max-height: 450px;">

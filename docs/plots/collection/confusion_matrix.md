@@ -17,6 +17,7 @@
 | fmt | str | ❌ | Format string for annotations, e.g., 'd' or '.2f'. |
 | cbar | bool | ❌ | Whether to display the colorbar. |
 | save | str | ❌ | Base filename to save PNG and PDF outputs. |
+| fontsize | float | ❌ | Base font size for annotations, ticks, and title. |
 
 ---
 

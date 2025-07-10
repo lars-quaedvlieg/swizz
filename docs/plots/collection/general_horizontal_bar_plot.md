@@ -21,6 +21,7 @@
 | color_map | Dict[str, str] | ❌ | Mapping of metrics to colours. |
 | style_map | Dict[str, str] | ❌ | Mapping of metrics to hatch styles. |
 | put_legend | bool | ❌ | Whether to display a legend. Default: True. |
+| fontsize | float | ❌ | Base font size for axis labels, tick labels, title, legend, and annotations. Default: 12. |
 | save | str | ❌ | Filename base to save PNG and PDF. |
 | ax | matplotlib.axes.Axes | ❌ | Optional matplotlib Axes object. |
 

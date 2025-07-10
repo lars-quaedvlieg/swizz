@@ -10,8 +10,7 @@ from swizz.plots._registry import register_plot
     name="multiple_std_lines_df",
     description=(
         "Line plot with shaded confidence intervals and configurable label, color, "
-        "and linestyle mappings, using a pandas DataFrame in long format."
-    ),
+        "and linestyle mappings, using a pandas DataFrame in long format."    ),
     args=[
         {"name": "data_df", "type": "pd.DataFrame", "required": True,
          "description": (
@@ -52,12 +51,13 @@ from swizz.plots._registry import register_plot
          "description": "Formatter for x-axis ticks."},
         {"name": "y_formatter", "type": "Callable", "required": False,
          "description": "Formatter for y-axis ticks."},
+        {"name": "fontsize", "type": "int", "required": False,
+         "description": "Base font size for axis labels, tick labels, legend, and CI shading labels. Default: 12."},
         {"name": "save", "type": "str", "required": False,
          "description": "Base filename to save PNG and PDF."},
     ],
-    example_image="multiple_std_lines_df.png",
-    example_code="multiple_std_lines_df.py",
 )
+
 def plot(
     data_df: pd.DataFrame,
     label_key: str,
@@ -77,63 +77,68 @@ def plot(
     ylabel: str = None,
     x_formatter=None,
     y_formatter=None,
+    fontsize: int = 12,
     save: str = None,
     ax=None,
 ):
-    # Prepare figure and axis
+    # Setup figure
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
     else:
         fig = ax.figure
 
+    # Ensure label ordering type
     try:
         data_df[label_key] = data_df[label_key].astype(int)
-    except:
+    except Exception:
         try:
             data_df[label_key] = data_df[label_key].astype(float)
-        except:
+        except Exception:
             pass
 
+    # Default color mapping
     if color_map is None:
-        positions = np.linspace(0, 1, len(data_df[label_key].unique()))
-        cmap = cm.get_cmap("viridis")
-        color_map = {key: cmap(pos) for key, pos in zip(data_df[label_key].unique(), positions)}
+        uniq = data_df[label_key].unique()
+        cmap = cm.get_cmap('viridis')
+        positions = np.linspace(0,1,len(uniq))
+        color_map = {lab: cmap(pos) for lab,pos in zip(uniq,positions)}
 
-    # Group and plot each series
-    for label, group in sorted(data_df.groupby(label_key), key=lambda x: x[0]):
-        display_name = label_map.get(label, label) if label_map else label
-        color = color_map.get(label) if color_map else None
-        linestyle = style_map.get(label, "solid") if style_map else "solid"
+    # Plot each series with CI
+    for lab, grp in sorted(data_df.groupby(label_key), key=lambda x: x[0]):
+        name = label_map.get(lab, lab) if label_map else lab
+        clr = color_map.get(lab)
+        ls = style_map.get(lab, 'solid') if style_map else 'solid'
 
-        x = group[x_key].values
-        y = group[y_key].values
-        yerr = group[yerr_key].values
+        x = grp[x_key].values
+        y = grp[y_key].values
+        yerr = grp[yerr_key].values
 
-        line, = ax.plot(x, y, label=display_name, color=color, linestyle=linestyle)
-        fill_color = color if color is not None else line.get_color()
-        ax.fill_between(x, y - yerr, y + yerr, color=fill_color, alpha=0.2)
+        line, = ax.plot(x, y, label=name, color=clr, linestyle=ls)
+        fill_clr = clr if clr is not None else line.get_color()
+        ax.fill_between(x, y - yerr, y + yerr, color=fill_clr, alpha=0.2)
 
-    # Legend and formatting
+    # Legend
     if legend_loc:
-        ax.legend(loc=legend_loc, title=legend_title, ncol=legend_ncol)
+        leg = ax.legend(loc=legend_loc, title=legend_title, ncol=legend_ncol)
+        leg.set_title(leg.get_title().get_text(), prop={'size':fontsize})
+        for txt in leg.get_texts(): txt.set_fontsize(fontsize)
+
+    # Formatters
     if x_formatter:
         ax.xaxis.set_major_formatter(mtick.FuncFormatter(x_formatter))
     if y_formatter:
         ax.yaxis.set_major_formatter(mtick.FuncFormatter(y_formatter))
 
-    # Axis labels and limits
-    if xlabel:
-        ax.set_xlabel(xlabel)
-    if ylabel:
-        ax.set_ylabel(ylabel)
-    if xlim:
-        ax.set_xlim(xlim)
-    if ylim:
-        ax.set_ylim(ylim)
+    # Axis labels and ticks
+    if xlabel: ax.set_xlabel(xlabel, fontsize=fontsize)
+    if ylabel: ax.set_ylabel(ylabel, fontsize=fontsize)
+    if xlim: ax.set_xlim(xlim)
+    if ylim: ax.set_ylim(ylim)
+    ax.tick_params(axis='both', labelsize=fontsize)
 
-    # Save if requested
+    # Save
     if save:
-        fig.savefig(f"{save}.png", dpi=300, bbox_inches="tight")
-        fig.savefig(f"{save}.pdf", dpi=300, bbox_inches="tight")
+        fig.savefig(f"{save}.png", dpi=300, bbox_inches='tight')
+        fig.savefig(f"{save}.pdf", dpi=300, bbox_inches='tight')
 
     return fig, ax

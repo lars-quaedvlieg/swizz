@@ -23,6 +23,7 @@
 | title | str | ❌ | Title of the heatmap. |
 | save | str | ❌ | Base filename to save PNG and PDF (without extension). |
 | cbar_title | str | ❌ | Title for the colorbar. |
+| fontsize | float | ❌ | Base font size for axis labels, tick labels, title, cell annotations, and colorbar label. |
 | ax | matplotlib.axes.Axes | ❌ | Matplotlib Axes object to plot on. If None, a new figure is created. |
 
 ---
@@ -32,32 +33,34 @@
 ````{dropdown} Click to show example code
 ```python
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 from swizz import plot
 
-# 1) Create a toy DataFrame (5 rows × 4 columns)
-rows = [f"Sample {i}" for i in range(1, 6)]
-cols = [f"Feature {j}" for j in range(1, 5)]
-data = pd.DataFrame(
-    np.random.rand(5, 4),
-    index=rows,
-    columns=cols
-)
+# 1) Create the exact DataFrame from your example image
+data = pd.DataFrame({
+    10: {6:  0.93,  9: 0.86, 12: 0.86},
+    20: {6:  0.92,  9: 0.88, 12: 0.86},
+    50: {6:  0.92,  9: 0.90, 12: 0.75},
+    100:{6:  0.75,  9: 0.90, 12: 0.78},
+})
+data.index.name = "Radius"
+data.columns.name = "Team Reward"
 
-# 2) Plot with annotations, custom colormap, and save output
+# 2) Plot with annotations, custom colormap, cbar label, axis labels, and save output
 fig, ax = plot(
     "heatmap",
     data=data,
     figsize=(7, 5),
-    cmap="Oranges",
-    vmin=0.0,
-    vmax=1.0,
-    annot=False,
+    cmap="Blues",
+    vmin=0.70,
+    vmax=0.95,
+    annot=True,
     fmt=".2f",
     cbar=True,
-    title="Toy DataFrame Heatmap",
-    save="dataframe_heatmap_example"
+    cbar_title="Lone Wolf Rate",
+    save="lone_wolf_rate_heatmap",
+    x_category="Team Reward",
+    y_category="Radius",
 )
 
 # 3) Show the figure
